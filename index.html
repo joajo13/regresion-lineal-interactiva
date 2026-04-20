@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Regresión Lineal - Visualización interactiva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false });"></script>
+<style>
+  .katex { font-size: 1.15em !important; }
+  .katex-display { margin: 14px 0 !important; }
+  .katex-display > .katex {
+    background: linear-gradient(180deg, #0a0e13 0%, #0d1218 100%);
+    border: 1px solid #1e293b;
+    border-left: 3px solid #3b82f6;
+    padding: 16px 22px;
+    border-radius: 5px;
+    display: inline-block;
+    min-width: auto;
+  }
+  .katex { color: #e0f2fe; }
+</style>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f1419;
+    color: #e6e6e6;
+    padding: 20px;
+  }
+  .mono, code, .formula, .stat span:last-child, .value, .glossary .sym, .var {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    font-feature-settings: "ss01", "zero", "calt";
+  }
+  h1 { margin: 0 0 8px 0; font-size: 22px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .canvas-wrap {
+    background: #1a1f26;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    background: #0f1419;
+    border-radius: 4px;
+    cursor: crosshair;
+  }
+  .panel {
+    background: #1a1f26;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .panel h3 { margin: 0; font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+  .stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    background: #0f1419;
+    border-radius: 5px;
+    font-size: 13px;
+  }
+  .stat span:first-child {
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  .stat span:last-child {
+    color: #7dd3fc;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+  .stat.loss span:last-child { color: #fb7185; }
+  label { font-size: 12px; color: #aaa; }
+  input[type="range"] { width: 100%; }
+  .value { font-family: monospace; color: #7dd3fc; font-size: 12px; }
+  button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+  }
+  button:hover { background: #1d4ed8; }
+  button.secondary { background: #374151; }
+  button.secondary:hover { background: #4b5563; }
+  button.danger { background: #dc2626; }
+  button.danger:hover { background: #b91c1c; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; }
+  .hint {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.5;
+  }
+  .legend {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 8px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .theory {
+    max-width: 1200px;
+    margin: 20px auto 0;
+    background: #1a1f26;
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+  .theory details { margin-bottom: 12px; }
+  .theory summary {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 8px 0;
+    color: #7dd3fc;
+    user-select: none;
+  }
+  .theory summary:hover { color: #93c5fd; }
+  .theory .body {
+    padding: 12px 0 6px 18px;
+    font-size: 14.5px;
+    line-height: 1.72;
+    color: #cbd5e1;
+    border-left: 2px solid #334155;
+  }
+  .theory .body p { margin: 0 0 12px 0; }
+  .theory .body strong { color: #f1f5f9; font-weight: 600; }
+  .theory code, .theory .formula {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    background: #0f1419;
+    padding: 3px 7px;
+    border-radius: 4px;
+    color: #fbbf24;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .theory .formula {
+    display: block;
+    padding: 16px 20px;
+    margin: 14px 0;
+    white-space: pre;
+    overflow-x: auto;
+    color: #93c5fd;
+    font-size: 15px;
+    line-height: 1.85;
+    font-weight: 500;
+    background: linear-gradient(180deg, #0a0e13 0%, #0d1218 100%);
+    border: 1px solid #1e293b;
+    border-left: 3px solid #3b82f6;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    letter-spacing: 0.3px;
+  }
+  .theory .formula::selection, .theory code::selection { background: #3b82f6; color: #fff; }
+  .theory ul { margin: 6px 0 10px 0; padding-left: 22px; }
+  .theory li { margin-bottom: 4px; }
+  .theory .warn {
+    background: rgba(251, 113, 133, 0.1);
+    border-left: 3px solid #fb7185;
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+  .theory .tip {
+    background: rgba(125, 211, 252, 0.08);
+    border-left: 3px solid #7dd3fc;
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+  .lr-status {
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-top: 6px;
+    font-weight: bold;
+  }
+  .lr-status.safe { background: rgba(34, 197, 94, 0.15); color: #86efac; }
+  .lr-status.warn { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+  .lr-status.danger { background: rgba(251, 113, 133, 0.15); color: #fda4af; }
+
+  .glossary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 16px;
+    background: #0f1419;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 10px 0 14px 0;
+    font-size: 13px;
+  }
+  .glossary .sym {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    color: #fbbf24;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: right;
+    padding-right: 12px;
+    border-right: 1px solid #334155;
+    letter-spacing: 0.3px;
+  }
+  .glossary .desc { color: #cbd5e1; font-size: 13.5px; line-height: 1.6; }
+
+  /* Tooltips sobre variables */
+  .var {
+    font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    background: #0f1419;
+    padding: 3px 7px;
+    border-radius: 4px;
+    color: #fbbf24;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-bottom: 1px dotted #fbbf24;
+    cursor: help;
+    position: relative;
+    letter-spacing: 0.3px;
+  }
+  .var:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 135%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    color: #e6e6e6;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    white-space: nowrap;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 10;
+    font-weight: normal;
+  }
+  .var:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #111827;
+    z-index: 10;
+  }
+
+  /* Animación del auto */
+  .car-demo {
+    background: #0b0f14;
+    border-radius: 6px;
+    padding: 14px;
+    margin: 12px 0;
+  }
+  .car-track {
+    position: relative;
+    height: 90px;
+    background: linear-gradient(to bottom, #1e293b 0%, #1e293b 60%, #334155 60%, #334155 100%);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .car-marks {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+  .car-mark {
+    position: absolute;
+    bottom: 0;
+    width: 2px;
+    height: 18px;
+    background: #64748b;
+  }
+  .car-mark-label {
+    position: absolute;
+    bottom: 22px;
+    transform: translateX(-50%);
+    color: #94a3b8;
+    font-size: 10px;
+    font-family: monospace;
+  }
+  .car {
+    position: absolute;
+    bottom: 46px;
+    font-size: 28px;
+    transition: left 0.1s linear;
+    transform: translateX(-50%);
+  }
+  .car-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .car-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .car-controls button { flex: 1; font-size: 12px; padding: 6px; }
+
+  /* Gradiente canvas */
+  .grad-demo {
+    background: #0b0f14;
+    border-radius: 6px;
+    padding: 14px;
+    margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+<h1>Regresión Lineal con Gradient Descent</h1>
+<div class="subtitle">Clickeá en el gráfico para agregar puntos. Apretá "Un paso" para ver cómo se ajusta la recta.</div>
+
+<div class="container">
+  <div class="canvas-wrap">
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div class="legend">
+      <div class="legend-item"><div class="dot" style="background:#fbbf24"></div>Datos reales</div>
+      <div class="legend-item"><div class="dot" style="background:#7dd3fc"></div>Predicción (recta)</div>
+      <div class="legend-item"><div class="dot" style="background:#fb7185"></div>Error por punto</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Parámetros del modelo</h3>
+    <div class="stat"><span>m (pendiente)</span><span id="mVal">1.000</span></div>
+    <div class="stat"><span>b (intercepto)</span><span id="bVal">0.000</span></div>
+    <div class="stat loss"><span>MSE (error)</span><span id="lossVal">—</span></div>
+    <div class="stat"><span>Iteración</span><span id="iterVal">0</span></div>
+
+    <h3>Controles</h3>
+    <div>
+      <label>Learning rate: <span class="value" id="lrVal">0.00001</span></label>
+      <input type="range" id="lr" min="-7" max="-3" step="0.1" value="-5">
+      <div class="hint">Escala logarítmica. Muy alto = explota. Muy bajo = lento.</div>
+      <div id="lrStatus" class="lr-status safe">Zona segura</div>
+    </div>
+
+    <div class="row">
+      <button id="step">Un paso</button>
+      <button id="play" class="secondary">Auto ▶</button>
+    </div>
+    <div class="row">
+      <button id="step100" class="secondary">100 pasos</button>
+      <button id="reset" class="danger">Reset</button>
+    </div>
+
+    <h3>Gradientes actuales</h3>
+    <div class="stat"><span>∂MSE/∂m</span><span id="gmVal">—</span></div>
+    <div class="stat"><span>∂MSE/∂b</span><span id="gbVal">—</span></div>
+    <div class="hint">
+      El modelo resta el gradiente × learning rate para bajar el error.
+      Mirá cómo los gradientes tienden a 0 cuando la recta converge.
+    </div>
+
+    <h3>Datos</h3>
+    <div class="row">
+      <button id="preset1" class="secondary">Ejemplo lineal</button>
+      <button id="clear" class="secondary">Limpiar</button>
+    </div>
+    <div class="hint">Click en el canvas = agregar punto. Shift+click = borrar punto cercano.</div>
+  </div>
+</div>
+
+<div class="theory">
+  <details>
+    <summary>¿Qué es una derivada? (con visualizador)</summary>
+    <div class="body">
+      <p>Antes que nada: sin derivadas, gradient descent es magia negra. Son literalmente la brújula del ML.</p>
+
+      <p><strong>¿Qué es una función?</strong> Una regla que a cada entrada le asigna una salida. <code>f(x) = x · 2</code> es una función: le metés 3 y te devuelve 6. Le metés 5 y te devuelve 10. La entrada se llama <code>x</code>, la salida se llama <code>f(x)</code> (que se lee "efe de equis").</p>
+
+      <p><strong>Qué es una derivada.</strong> Una derivada te dice <strong>qué tan rápido cambia la salida de una función cuando movés su entrada un poquito</strong>.</p>
+
+      <div class="tip"><strong>Entendamos primero el ejemplo del auto — por qué la velocidad "cambia".</strong>
+        <p style="margin-top:8px;">Imaginá que tenés una función <code>posición(tiempo)</code> que te dice en qué kilómetro de la ruta estás en cada segundo. Si vas siempre a la misma velocidad (120 km/h constante), la función es una línea recta y la velocidad es siempre la misma.</p>
+        <p>Pero en la vida real <strong>no vas siempre a la misma velocidad</strong>: acelerás, frenás, parás en un semáforo. La velocidad cambia en cada momento. Si el semáforo te frena, tu posición deja de cambiar por un rato (velocidad = 0). Cuando apretás el acelerador, la posición cambia cada vez más rápido (velocidad creciente).</p>
+        <p>La <strong>derivada</strong> de <code>posición(tiempo)</code> es una NUEVA función que te dice la velocidad en cada momento. No es un solo número — es un número distinto para cada instante. Eso es lo importante: <strong>la derivada depende del punto donde la estás midiendo</strong>.</p>
+      </div>
+
+      <p><strong>Por qué usamos <code>f(x) = x²</code> en el visualizador.</strong> Es solo un <strong>ejemplo</strong>, no algo sagrado. Elegimos <code>x²</code> (equis al cuadrado, o sea <code>x · x</code>) porque:</p>
+      <ul>
+        <li>No es una recta — es una curva, así la pendiente (y por lo tanto la derivada) cambia según dónde mires.</li>
+        <li>Es la función más simple que tiene esa propiedad. Si usáramos una recta, la derivada sería siempre el mismo número y sería aburrido.</li>
+        <li><strong>Es la forma del "tazón" del MSE de la app principal.</strong> El MSE es esencialmente una suma de cuadrados de errores, así que su forma es parecida a <code>x²</code> pero en 3D. Entender cómo se comportan las derivadas en <code>x²</code> te prepara directamente para entender el MSE.</li>
+      </ul>
+
+      <p><strong>Visualizador.</strong> Abajo graficamos la función <code>f(x) = x²</code> (la curva amarilla). Movés el slider → el punto rojo se desliza por la curva. La línea azul es la <strong>tangente</strong> en ese punto — una recta que "toca" la curva sin cruzarla, y que tiene exactamente la misma inclinación que la curva en ese punto. <strong>La pendiente de esa tangente ES la derivada</strong>.</p>
+
+      <div style="background:#0f1419; border-radius:6px; padding:12px; margin:12px 0;">
+        <canvas id="derivCanvas" width="800" height="380" style="display:block; width:100%; background:#0b0f14; border-radius:4px;"></canvas>
+        <div style="margin-top:10px;">
+          <label>Posición en x: <span class="value" id="derivXVal">1.00</span></label>
+          <input type="range" id="derivX" min="-4" max="4" step="0.05" value="1" style="width:100%;">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px;">
+          <div class="stat"><span>f(x) = x²</span><span id="derivFx">1.00</span></div>
+          <div class="stat"><span>f'(x) = 2x</span><span id="derivDfx">2.00</span></div>
+          <div class="stat"><span>Pendiente</span><span id="derivSlope">2.00</span></div>
+        </div>
+        <div class="hint" style="margin-top:8px;">
+          Mirá qué pasa en <code>x = 0</code> — la curva es plana, la tangente es horizontal, la derivada es 0.
+          En <code>x = 2</code> sube empinada, derivada = 4. En <code>x = -3</code> baja, derivada = -6 (negativa).
+        </div>
+      </div>
+
+      <div class="tip"><strong>¿Qué representaría <code>x²</code> en el ejemplo del auto?</strong>
+        <p style="margin-top:8px;">Renombremos las letras para darle sentido físico. En vez de <code>f(x) = x²</code>, escribimos <code>posición(tiempo) = tiempo²</code>. O sea, <code>x</code> ahora es el <strong>tiempo</strong> (en segundos) y <code>f(x)</code> es la <strong>posición</strong> (en metros).</p>
+        <p>Veamos cómo se mueve el auto con esa función:</p>
+        <div class="formula">tiempo (s)  |  posición (m)  |  avanzó ese segundo
+────────────┼────────────────┼─────────────────────
+    0       |       0        |       —
+    1       |       1        |       1 m
+    2       |       4        |       3 m
+    3       |       9        |       5 m
+    4       |      16        |       7 m
+    5       |      25        |       9 m</div>
+        <p>Mirá la última columna: <strong>cada segundo avanzás más metros que el anterior</strong>. Eso significa una sola cosa: estás <strong>acelerando</strong>. Es exactamente lo que le pasa a un auto que arranca parado y apreta el acelerador a fondo, o a una piedra que cae desde un puente por gravedad.</p>
+        <p>De hecho la fórmula real de caída libre es <code>distancia = ½ · g · tiempo²</code> (con <code>g ≈ 9.8 m/s²</code>). El tiempo al cuadrado. Por eso caer de 10 pisos es MUCHO peor que caer de 5 — no es el doble, es mucho más que el doble.</p>
+
+        <p><strong>Acá cobra sentido total la derivada.</strong> Dijimos que la derivada de <code>x²</code> es <code>2x</code>. Traduciendo: <code>velocidad(tiempo) = 2 · tiempo</code>.</p>
+        <div class="formula">tiempo  |  posición (t²)  |  velocidad (2t)
+────────┼─────────────────┼─────────────────
+   0    |        0        |    0 (parado)
+   1    |        1        |    2 m/s
+   2    |        4        |    4 m/s
+   3    |        9        |    6 m/s
+   4    |       16        |    8 m/s
+   5    |       25        |   10 m/s</div>
+        <p>La velocidad crece linealmente con el tiempo → eso es <strong>aceleración constante</strong>. La derivada te dice "en este instante exacto, estás yendo a esta velocidad".</p>
+
+        <p><strong>Mirá el auto en acción.</strong> Dale play y observá cómo arranca lento y cada segundo avanza más. Las marcas en la ruta son las posiciones de la tabla (1m, 4m, 9m, 16m, 25m).</p>
+        <div class="car-demo">
+          <div class="car-track">
+            <div class="car-marks" id="carMarks"></div>
+            <div class="car" id="carEmoji">🚗</div>
+          </div>
+          <div class="car-stats">
+            <div class="stat"><span>tiempo</span><span id="carT">0.00 s</span></div>
+            <div class="stat"><span>posición = t²</span><span id="carPos">0.00 m</span></div>
+            <div class="stat"><span>velocidad = 2t</span><span id="carVel">0.00 m/s</span></div>
+          </div>
+          <div class="car-controls">
+            <button id="carPlay">▶ Play</button>
+            <button id="carReset" class="secondary">Reset</button>
+          </div>
+        </div>
+
+        <p><strong>El cierre:</strong></p>
+        <ul>
+          <li>En <code>x = 0</code> la tangente del visualizador es horizontal → el auto todavía está parado, velocidad = 0.</li>
+          <li>A medida que <code>x</code> crece, la tangente se empina → el auto va cada vez más rápido, por eso la posición cambia más fuerte.</li>
+          <li>Del lado negativo la curva sube también: matemáticamente la función existe, aunque físicamente "tiempo negativo" no tenga sentido (sería como rebobinar el video).</li>
+        </ul>
+      </div>
+
+      <div class="tip"><strong>¿De dónde sale que la derivada de <code>x²</code> es <code>2x</code>?</strong>
+        <p style="margin-top:8px;">No es un invento arbitrario. Sale de la definición de derivada: agarrás dos puntos muy cercanos de la función, calculás cuánto cambia la salida dividido cuánto cambiaste la entrada, y hacés que la distancia entre esos puntos sea casi cero.</p>
+        <p>Probemos con $f(x) = x^2$ en un punto $x$, y un punto muy cerca $x + h$ (donde $h$ es chiquito):</p>
+        $$\frac{\text{cambio en } f}{\text{cambio en } x} = \frac{f(x+h) - f(x)}{h} = \frac{(x+h)^2 - x^2}{h}$$
+        <p>Expandiendo $(x+h)^2 = x^2 + 2xh + h^2$:</p>
+        $$\frac{x^2 + 2xh + h^2 - x^2}{h} = \frac{2xh + h^2}{h} = 2x + h$$
+        <p>Ahora hacemos $h$ lo más chico posible ($h \to 0$). El término $h$ desaparece y nos queda $2x$. Por eso la derivada de $x^2$ es $2x$. Si probás con $f(x) = x^3$ sale $3x^2$. De ahí viene la regla general $x^n \to n \cdot x^{n-1}$.</p>
+      </div>
+
+      <p><strong>Qué te dice una derivada, en concreto:</strong></p>
+      <ul>
+        <li><strong>Cuánto cambia f si movés x un poco.</strong> Si <code>f'(x) = 5</code>, significa: "si aumento x en 0.1, entonces f aumenta aprox 5 · 0.1 = 0.5".</li>
+        <li><strong>La pendiente de la tangente en ese punto.</strong> Positiva = sube, negativa = baja, cero = plana.</li>
+        <li><strong>La dirección del cambio:</strong> <code>f'(x) &gt; 0</code> creciendo, <code>f'(x) &lt; 0</code> decreciendo, <code>f'(x) = 0</code> punto crítico (máximo, mínimo o meseta).</li>
+      </ul>
+
+      <p>Ese último caso es lo que explota gradient descent: <strong>el mínimo de una función está donde la derivada es 0</strong>. Por eso cuando los gradientes tienden a 0 en la app principal, sabemos que la recta convergió.</p>
+
+      <p><strong>Reglas prácticas</strong> (con esto derivás casi cualquier polinomio):</p>
+      $$\begin{aligned}
+      f(x) = c &\quad\Rightarrow\quad f'(x) = 0 \\
+      f(x) = x &\quad\Rightarrow\quad f'(x) = 1 \\
+      f(x) = x^n &\quad\Rightarrow\quad f'(x) = n \cdot x^{n-1} \\
+      f(x) = c \cdot g(x) &\quad\Rightarrow\quad f'(x) = c \cdot g'(x) \\
+      f(x) = g(x) + h(x) &\quad\Rightarrow\quad f'(x) = g'(x) + h'(x)
+      \end{aligned}$$
+      <p>Donde $c$ es una constante, $n$ es un exponente cualquiera, y $g$, $h$ son otras funciones.</p>
+
+      <p><strong>Ejemplo:</strong> $f(x) = 3x^2 + 5x + 7$</p>
+      <ul>
+        <li>Derivada de $3x^2 \to 3 \cdot 2x = 6x$</li>
+        <li>Derivada de $5x \to 5$</li>
+        <li>Derivada de $7$ (constante) $\to 0$</li>
+        <li>Total: $f'(x) = 6x + 5$</li>
+      </ul>
+
+      <p><strong>Derivadas parciales (∂)</strong> — lo que usamos en la app principal. Cuando una función tiene varias entradas (como nuestro MSE que depende de <code>m</code> y <code>b</code>), hay una derivada <em>por cada variable</em>. Se escriben con <code>∂</code> (una d redondeada) en vez de <code>d</code>:</p>
+      <ul>
+        <li><code>∂L/∂m</code> = "cómo cambia L si muevo <em>solo</em> m, dejando b fijo"</li>
+        <li><code>∂L/∂b</code> = "cómo cambia L si muevo <em>solo</em> b, dejando m fijo"</li>
+      </ul>
+      <p>Misma idea que la derivada normal, pero "congelás" las otras variables mientras derivás respecto a una.</p>
+
+      <p>El <strong>gradiente</strong> es el vector que junta todas las derivadas parciales: <code>∇L = (∂L/∂m, ∂L/∂b)</code>. Ese vector apunta en la dirección donde L <em>crece</em> más rápido. Por eso gradient descent RESTA el gradiente: para ir al revés y bajar hacia el mínimo.</p>
+
+      <div class="warn"><strong>Resumen para ML:</strong> Sin derivadas, el modelo no sabe hacia dónde ajustar sus parámetros. Todo el entrenamiento es: calcular gradientes → moverse en la dirección opuesta → repetir hasta que las derivadas sean ≈ 0.</div>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Qué es un gradiente? (con visualizador del "tazón")</summary>
+    <div class="body">
+      <p>Ya tenés todo lo necesario para entenderlo. <strong>Un gradiente es simplemente la versión multivariable de la derivada.</strong> Nada más.</p>
+
+      <p><strong>De derivada a gradiente.</strong> Cuando una función tiene una sola entrada (como <span class="var" data-tip="Función con una sola variable de entrada">f(x) = x²</span>), tiene una sola derivada. Pero en ML las funciones casi nunca tienen una sola entrada: el MSE de la app depende de DOS (<span class="var" data-tip="Pendiente de la recta — parámetro que el modelo aprende">m</span> y <span class="var" data-tip="Intercepto de la recta — parámetro que el modelo aprende">b</span>). Una red neuronal depende de millones de pesos.</p>
+
+      <p>La solución: calculamos <strong>una derivada por cada variable</strong> (las derivadas parciales) y las juntamos en un vector. Ese vector es el gradiente.</p>
+
+      $$\nabla L = \left( \frac{\partial L}{\partial m},\; \frac{\partial L}{\partial b} \right)$$
+      <p>El símbolo <span class="var" data-tip="Se lee 'nabla' — significa 'gradiente de'">∇</span> se lee "nabla". El gradiente es un vector (una flecha con dirección y longitud). Para una red con un millón de pesos, el gradiente es un vector de un millón de números.</p>
+
+      <p><strong>Visualizador del "tazón".</strong> Esto es el paisaje del error visto desde arriba. Cada curva de nivel (como un mapa topográfico) une puntos con el MISMO error. El centro azul es el mínimo (error bajo), los bordes rojos son error alto. <strong>Arrastrá el punto blanco</strong> y mirá cómo la flecha (el gradiente) siempre apunta hacia donde el error sube más rápido.</p>
+
+      <div class="grad-demo">
+        <canvas id="gradCanvas" width="700" height="500" style="display:block; width:100%; background:#000; border-radius:4px; cursor:move;"></canvas>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-top:10px;">
+          <div class="stat"><span>m</span><span id="gradM">-1.50</span></div>
+          <div class="stat"><span>b</span><span id="gradB">1.20</span></div>
+          <div class="stat"><span>L (error)</span><span id="gradL">—</span></div>
+          <div class="stat"><span>|∇L|</span><span id="gradMag">—</span></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+          <div class="stat"><span>∂L/∂m</span><span id="gradDm">—</span></div>
+          <div class="stat"><span>∂L/∂b</span><span id="gradDb">—</span></div>
+        </div>
+        <div class="car-controls">
+          <button id="gradStep">Un paso de GD</button>
+          <button id="gradAuto" class="secondary">Auto ▶</button>
+          <button id="gradReset" class="danger">Reset</button>
+        </div>
+        <div class="hint" style="margin-top:8px;">
+          La <strong>flecha roja</strong> es el gradiente (∇L) — apunta cuesta arriba.
+          La <strong>flecha azul punteada</strong> es hacia donde gradient descent se moverá (sentido opuesto).
+          Mirá cómo cuando el punto está lejos del centro, la flecha es larga (pendiente empinada). Cerca del centro, se hace cortita hasta desaparecer.
+        </div>
+      </div>
+
+      <p><strong>Qué te dice un gradiente (tres cosas a la vez):</strong></p>
+      <ul>
+        <li><strong>Dirección de máxima subida.</strong> Si estás parado en la ladera del tazón, el gradiente apunta hacia donde la pendiente es más empinada para ARRIBA.</li>
+        <li><strong>Magnitud (qué tan empinada es esa subida).</strong> El vector es largo en pendientes bruscas, corto en zonas planas. En el mínimo exacto, el vector es de longitud cero — por eso en la app principal los gradientes tienden a 0 cuando converge.</li>
+        <li><strong>Contribución de cada variable.</strong> Mirando las componentes por separado podés decir "el error cambia mucho cuando muevo m, pero poco cuando muevo b".</li>
+      </ul>
+
+      <div class="tip"><strong>Por qué gradient descent RESTA el gradiente.</strong> El gradiente apunta hacia arriba. Nosotros queremos bajar. Por eso nos movemos en la dirección opuesta:
+        $$(m, b) \;\leftarrow\; (m, b) \;-\; \text{lr} \cdot \nabla L$$
+        "El nuevo punto es el viejo menos un pasito en la dirección contraria al gradiente". Esto es EXACTAMENTE la misma regla que usabas en la app principal con <code>m ← m - lr · ∂L/∂m</code>, solo que escrita en forma vectorial.
+      </div>
+
+      <div class="warn"><strong>La analogía de la montaña nublada.</strong> Imaginate que estás perdido en una montaña con niebla espesa, no ves nada a más de un metro. Querés bajar al valle pero no sabés dónde está. Lo único que podés hacer: tantear con el pie qué dirección baja más rápido desde donde estás, dar un paso, y repetir. En algún momento llegás al fondo.
+        <p style="margin-top:8px;">Eso ES gradient descent. El gradiente es tu pie tanteando. El <span class="var" data-tip="Learning rate — tamaño del paso">lr</span> es qué tan largos son los pasos. El mínimo es el fondo del valle. Si los pasos son demasiado grandes, en vez de bajar cuidadosamente pegás saltos olímpicos con los ojos vendados — y te estrellás contra la ladera opuesta. 💀</p>
+      </div>
+
+      <p><strong>Resumen derivada vs gradiente:</strong></p>
+      <div class="glossary">
+        <div class="sym">Concepto</div><div class="desc" style="color:#888">1 variable &nbsp;|&nbsp; varias variables</div>
+        <div class="sym">Función</div><div class="desc">f(x) &nbsp;|&nbsp; L(m, b, ...)</div>
+        <div class="sym">Cambio</div><div class="desc">f'(x), un número &nbsp;|&nbsp; ∇L, un vector</div>
+        <div class="sym">Qué dice</div><div class="desc">pendiente en ese punto &nbsp;|&nbsp; dirección + magnitud de máxima subida</div>
+        <div class="sym">Es 0 en</div><div class="desc">máximos/mínimos &nbsp;|&nbsp; máximos/mínimos</div>
+        <div class="sym">GD</div><div class="desc">x ← x - lr·f'(x) &nbsp;|&nbsp; params ← params - lr·∇L</div>
+      </div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Glosario — qué significa cada letra</summary>
+    <div class="body">
+      <p>Antes de ver las fórmulas, esto es lo que significa cada símbolo. Volvé acá cuando te pierdas:</p>
+      <div class="glossary">
+        <div class="sym">x</div><div class="desc">Entrada (input). En el ejemplo: los metros cuadrados de una casa.</div>
+        <div class="sym">y</div><div class="desc">Salida real (el valor verdadero que queremos predecir). En el ejemplo: el precio real.</div>
+        <div class="sym">ŷ</div><div class="desc">"y con sombrero" = predicción del modelo. Lo que el modelo cree que vale y.</div>
+        <div class="sym">m</div><div class="desc">Pendiente de la recta. Cuánto sube y cuando x aumenta 1. Es uno de los parámetros que el modelo aprende.</div>
+        <div class="sym">b</div><div class="desc">Intercepto. El valor de y cuando x = 0 (donde la recta cruza el eje vertical). El otro parámetro que se aprende.</div>
+        <div class="sym">n</div><div class="desc">Cantidad de puntos de datos que tenés. Si tenés 15 casas, n = 15.</div>
+        <div class="sym">i</div><div class="desc">Índice. Cuando ves xᵢ o yᵢ, es "el x (o y) del punto número i". Va de 1 hasta n.</div>
+        <div class="sym">Σᵢ</div><div class="desc">"Sumatoria sobre i" = sumá esto para todos los puntos (de i=1 hasta i=n).</div>
+        <div class="sym">L</div><div class="desc">Loss (pérdida) = el error total del modelo. Un número que queremos hacer chico. Acá usamos MSE.</div>
+        <div class="sym">MSE</div><div class="desc">Mean Squared Error = promedio del error al cuadrado. Una forma específica de calcular L.</div>
+        <div class="sym">∂L/∂m</div><div class="desc">"Derivada parcial de L respecto a m". Cuánto cambia el error si movés m un poquitito. Es un gradiente.</div>
+        <div class="sym">∂L/∂b</div><div class="desc">Lo mismo pero para b. Cuánto cambia el error si movés b un poquitito.</div>
+        <div class="sym">lr</div><div class="desc">Learning rate = tasa de aprendizaje. Un número chico (ej: 0.0003) que controla qué tan grande es cada paso.</div>
+        <div class="sym">←</div><div class="desc">"Se actualiza a". Cuando ves "m ← m - ...", significa que el nuevo valor de m es el viejo menos eso.</div>
+      </div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>¿Qué estamos haciendo matemáticamente?</summary>
+    <div class="body">
+      <p><strong>1) El modelo.</strong> Asumimos que la relación entre <code>x</code> (input) e <code>y</code> (salida real) es una recta:</p>
+      $$\hat{y} = m \cdot x + b$$
+      <p>Donde $\hat{y}$ es la predicción (lo que el modelo cree), $m$ es la pendiente y $b$ el intercepto. Los parámetros que el modelo aprende son $m$ y $b$. Los datos $(x_i, y_i)$ son fijos — el algoritmo no los toca.</p>
+
+      <p><strong>2) La loss function (MSE).</strong> Un número que mide qué tan mal está el modelo:</p>
+      $$L(m, b) = \frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)^2 = \frac{1}{n} \sum_{i=1}^{n} (m \cdot x_i + b - y_i)^2$$
+      <p>Traducción palabra por palabra:</p>
+      <ul>
+        <li><code>L(m, b)</code> = la pérdida depende de los valores actuales de m y b.</li>
+        <li><code>ŷᵢ - yᵢ</code> = el error del punto número i (predicción menos valor real).</li>
+        <li><code>( )²</code> = elevado al cuadrado, para que errores negativos y positivos no se cancelen y para castigar más los errores grandes.</li>
+        <li><code>Σᵢ</code> = sumá eso para todos los puntos.</li>
+        <li><code>1/n</code> = dividí por la cantidad de puntos para obtener el promedio.</li>
+      </ul>
+      <p>Esas líneas rojas verticales en el gráfico son justo <code>(ŷᵢ - yᵢ)</code>, el error crudo de cada punto antes de elevarlo al cuadrado.</p>
+
+      <p><strong>3) Los gradientes.</strong> Son derivadas parciales de $L$: dicen cuánto cambia el error si movés un parámetro un poquitito.</p>
+      $$\begin{aligned}
+      \frac{\partial L}{\partial m} &= \frac{2}{n} \sum_{i=1}^{n} x_i \cdot (m \cdot x_i + b - y_i) \\[6pt]
+      \frac{\partial L}{\partial b} &= \frac{2}{n} \sum_{i=1}^{n} (m \cdot x_i + b - y_i)
+      \end{aligned}$$
+      <p>Leyendo $\frac{\partial L}{\partial m}$: "de-ele sobre de-eme" = la derivada parcial de $L$ respecto a $m$. Salen de aplicar la regla de la cadena al MSE. En el panel lateral ves sus valores en vivo — mirá cómo se van acercando a 0 cuando la recta converge.</p>
+
+      <p><strong>4) La regla de update.</strong> En cada iteración:</p>
+      $$\begin{aligned}
+      m &\leftarrow m - \text{lr} \cdot \frac{\partial L}{\partial m} \\[4pt]
+      b &\leftarrow b - \text{lr} \cdot \frac{\partial L}{\partial b}
+      \end{aligned}$$
+      <p>La flecha <code>←</code> significa "se reemplaza por". El nuevo valor de m es el viejo m menos <code>lr · ∂L/∂m</code>. El <code>lr</code> (learning rate) es un número chico que controla qué tan grande es el paso. El signo menos es clave: el gradiente apunta hacia donde el error SUBE, por eso restamos para bajar.</p>
+
+      <p><strong>5) Convergencia.</strong> Cuando los gradientes son ≈ 0, los parámetros dejan de moverse. Estás en el fondo del "tazón" — la mejor recta posible bajo MSE.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Por qué al subir el learning rate el modelo enloquece?</summary>
+    <div class="body">
+      <p>La intuición geométrica es clave. Pensá el MSE como un <strong>tazón en 3D</strong>: los ejes horizontales son <code>m</code> y <code>b</code>, la altura es el error. En regresión lineal este tazón es convexo (una parábola) y tiene un único punto mínimo en el fondo.</p>
+
+      <p>El gradiente en cualquier punto apunta hacia <strong>arriba</strong> de la pendiente (máxima subida). Gradient descent resta <code>lr · gradiente</code> para ir al revés, hacia el fondo.</p>
+
+      <p>El problema: el gradiente te da <strong>la dirección</strong>, no <strong>cuánto moverte</strong>. Eso lo decide el <code>lr</code>.</p>
+
+      <ul>
+        <li><strong>lr chico</strong> → pasitos cortos. Bajás lento pero seguro hasta el fondo.</li>
+        <li><strong>lr justo</strong> → pasos medidos. Llegás rápido al mínimo.</li>
+        <li><strong>lr muy grande</strong> → pegás un salto tan largo que <strong>te pasás de largo y caés en la pared opuesta del tazón, más arriba que donde estabas</strong>. El próximo gradiente ahí es aún más grande (más pendiente). El siguiente salto te catapulta todavía más lejos. Los valores se disparan hasta <code>NaN</code>. 💀</li>
+      </ul>
+
+      <div class="warn"><strong>Analogía.</strong> Es como bajar una escalera pegando saltos. Si el salto es del tamaño del escalón, bajás bien. Si es mucho más grande que el escalón, rebotás contra la pared de enfrente y salís volando.</div>
+
+      <p><strong>Lo formal.</strong> Para que gradient descent converja en una función convexa, existe un umbral <code>lr_max</code> que depende de la <em>curvatura</em> del tazón (técnicamente, del mayor autovalor del Hessiano, o de la constante de Lipschitz del gradiente). Si <code>lr &lt; lr_max</code>, cada paso reduce el error y converge. Si <code>lr &gt; lr_max</code>, cada paso <em>amplifica</em> el error y el modelo diverge exponencialmente.</p>
+
+      <p>Por eso cuando movés el slider hacia arriba, en algún punto cruzás ese umbral y la cosa se rompe. No es gradual — es un umbral duro.</p>
+
+      <div class="tip"><strong>Probá esto en la app:</strong>
+        <ul>
+          <li>Con <code>lr ≈ 0.0003</code> (default) mirá cómo converge suavecito.</li>
+          <li>Subilo a <code>0.001</code> y vas a ver que oscila un poco antes de asentarse.</li>
+          <li>Subilo más y mirá los valores de <code>m</code> y <code>b</code> — se disparan a millones y después <code>NaN</code>.</li>
+          <li>Bajalo a <code>0.00001</code> y dale "Auto" — vas a ver que converge pero tarda una eternidad.</li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Qué tiene que ver esto con redes neuronales?</summary>
+    <div class="body">
+      <p>Todo. Una <strong>neurona</strong> es básicamente esto:</p>
+      $$\text{salida} = \sigma(w_1 \cdot x_1 + w_2 \cdot x_2 + \dots + w_n \cdot x_n + b)$$
+      <p>Si sacás la función de activación, es literalmente una regresión lineal multivariable. Una red neuronal no es más que muchas de estas apiladas, con no-linealidades en el medio para que pueda aprender relaciones más complejas que una recta.</p>
+
+      <p>Y el algoritmo para entrenarla es <strong>el mismo loop</strong>:</p>
+      <ul>
+        <li>Predecir con los pesos actuales</li>
+        <li>Calcular el error (loss function)</li>
+        <li>Calcular gradientes de la loss respecto a cada peso</li>
+        <li>Actualizar pesos restando <code>lr · gradiente</code></li>
+        <li>Repetir</li>
+      </ul>
+      <p>Lo único que cambia en una red profunda es cómo se calculan los gradientes: con <strong>backpropagation</strong>, que es la regla de la cadena aplicada capa por capa. Pero la idea central es la misma que acá. Si entendés esto, ya tenés el 70% de cómo se entrena cualquier modelo de ML moderno, incluso los LLMs.</p>
+    </div>
+  </details>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Coordenadas del mundo: x de 0 a 200, y de 0 a 500
+const W = { xMin: 0, xMax: 200, yMin: 0, yMax: 500 };
+const PAD = 50;
+
+let points = [];
+let m = 1, b = 0;
+let iter = 0;
+let lr = 0.00001;
+let playing = false;
+let playHandle = null;
+
+function worldToScreen(x, y) {
+  const sx = PAD + (x - W.xMin) / (W.xMax - W.xMin) * (canvas.width - 2*PAD);
+  const sy = canvas.height - PAD - (y - W.yMin) / (W.yMax - W.yMin) * (canvas.height - 2*PAD);
+  return [sx, sy];
+}
+function screenToWorld(sx, sy) {
+  const x = W.xMin + (sx - PAD) / (canvas.width - 2*PAD) * (W.xMax - W.xMin);
+  const y = W.yMin + (canvas.height - PAD - sy) / (canvas.height - 2*PAD) * (W.yMax - W.yMin);
+  return [x, y];
+}
+
+function predict(x) { return m * x + b; }
+
+function computeMSE() {
+  if (points.length === 0) return 0;
+  let s = 0;
+  for (const p of points) {
+    const e = predict(p.x) - p.y;
+    s += e * e;
+  }
+  return s / points.length;
+}
+
+function computeGradients() {
+  if (points.length === 0) return [0, 0];
+  let gm = 0, gb = 0;
+  for (const p of points) {
+    const err = predict(p.x) - p.y;
+    gm += p.x * err;
+    gb += err;
+  }
+  gm = (2 / points.length) * gm;
+  gb = (2 / points.length) * gb;
+  return [gm, gb];
+}
+
+function step() {
+  if (points.length === 0) return;
+  const [gm, gb] = computeGradients();
+  m -= lr * gm;
+  b -= lr * gb;
+  iter++;
+  render();
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = '#1f2937';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= 200; x += 25) {
+    const [sx] = worldToScreen(x, 0);
+    ctx.beginPath(); ctx.moveTo(sx, PAD); ctx.lineTo(sx, canvas.height - PAD); ctx.stroke();
+  }
+  for (let y = 0; y <= 500; y += 50) {
+    const [, sy] = worldToScreen(0, y);
+    ctx.beginPath(); ctx.moveTo(PAD, sy); ctx.lineTo(canvas.width - PAD, sy); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#4b5563';
+  ctx.lineWidth = 2;
+  const [x0, y0] = worldToScreen(0, 0);
+  ctx.beginPath(); ctx.moveTo(PAD, y0); ctx.lineTo(canvas.width - PAD, y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x0, PAD); ctx.lineTo(x0, canvas.height - PAD); ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '11px monospace';
+  for (let x = 0; x <= 200; x += 50) {
+    const [sx, sy] = worldToScreen(x, 0);
+    ctx.fillText(x, sx - 8, sy + 15);
+  }
+  for (let y = 0; y <= 500; y += 100) {
+    const [sx, sy] = worldToScreen(0, y);
+    ctx.fillText(y, sx - 35, sy + 4);
+  }
+  ctx.fillStyle = '#9ca3af';
+  ctx.fillText('x (metros)', canvas.width - 90, canvas.height - 20);
+  ctx.save();
+  ctx.translate(15, 60);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('y (precio)', 0, 0);
+  ctx.restore();
+
+  // Línea de predicción
+  const [lx1, ly1] = worldToScreen(W.xMin, predict(W.xMin));
+  const [lx2, ly2] = worldToScreen(W.xMax, predict(W.xMax));
+  ctx.strokeStyle = '#7dd3fc';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(lx1, ly1); ctx.lineTo(lx2, ly2); ctx.stroke();
+
+  // Líneas de error (rojas verticales)
+  ctx.strokeStyle = 'rgba(251, 113, 133, 0.5)';
+  ctx.lineWidth = 1.5;
+  for (const p of points) {
+    const [px, py] = worldToScreen(p.x, p.y);
+    const [, pyPred] = worldToScreen(p.x, predict(p.x));
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, pyPred); ctx.stroke();
+  }
+
+  // Puntos
+  for (const p of points) {
+    const [sx, sy] = worldToScreen(p.x, p.y);
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Stats
+  document.getElementById('mVal').textContent = m.toFixed(3);
+  document.getElementById('bVal').textContent = b.toFixed(3);
+  document.getElementById('lossVal').textContent = points.length ? computeMSE().toFixed(2) : '—';
+  document.getElementById('iterVal').textContent = iter;
+  const [gm, gb] = computeGradients();
+  document.getElementById('gmVal').textContent = points.length ? gm.toFixed(3) : '—';
+  document.getElementById('gbVal').textContent = points.length ? gb.toFixed(3) : '—';
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const sy = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const [x, y] = screenToWorld(sx, sy);
+  if (x < W.xMin || x > W.xMax || y < W.yMin || y > W.yMax) return;
+
+  if (e.shiftKey) {
+    // Borrar el más cercano
+    let bestIdx = -1, bestDist = Infinity;
+    points.forEach((p, i) => {
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    });
+    if (bestIdx >= 0 && bestDist < 20) points.splice(bestIdx, 1);
+  } else {
+    points.push({ x, y });
+  }
+  render();
+});
+
+document.getElementById('step').onclick = step;
+document.getElementById('step100').onclick = () => {
+  for (let i = 0; i < 100; i++) step();
+};
+document.getElementById('play').onclick = () => {
+  const btn = document.getElementById('play');
+  if (playing) {
+    clearInterval(playHandle);
+    playing = false;
+    btn.textContent = 'Auto ▶';
+    btn.classList.add('secondary');
+  } else {
+    playing = true;
+    btn.textContent = 'Pausar ⏸';
+    btn.classList.remove('secondary');
+    playHandle = setInterval(step, 50);
+  }
+};
+document.getElementById('reset').onclick = () => {
+  m = 1; b = 0; iter = 0;
+  render();
+};
+document.getElementById('clear').onclick = () => {
+  points = []; m = 1; b = 0; iter = 0;
+  render();
+};
+document.getElementById('preset1').onclick = () => {
+  points = [];
+  // Generar puntos alrededor de y = 2x + 30 con ruido
+  for (let i = 0; i < 15; i++) {
+    const x = 10 + Math.random() * 180;
+    const y = 2 * x + 30 + (Math.random() - 0.5) * 80;
+    if (y >= W.yMin && y <= W.yMax) points.push({ x, y });
+  }
+  m = 1; b = 0; iter = 0;
+  render();
+};
+
+document.getElementById('lr').addEventListener('input', (e) => {
+  lr = Math.pow(10, parseFloat(e.target.value));
+  document.getElementById('lrVal').textContent = lr.toFixed(6);
+  const status = document.getElementById('lrStatus');
+  if (lr < 0.0008) {
+    status.className = 'lr-status safe';
+    status.textContent = 'Zona segura — converge bien';
+  } else if (lr < 0.003) {
+    status.className = 'lr-status warn';
+    status.textContent = 'Cuidado — puede oscilar';
+  } else {
+    status.className = 'lr-status danger';
+    status.textContent = 'Peligro — va a explotar 💀';
+  }
+});
+
+// Preset inicial
+document.getElementById('preset1').click();
+
+// ============= Visualizador de derivadas =============
+const dCanvas = document.getElementById('derivCanvas');
+const dCtx = dCanvas.getContext('2d');
+const dRange = { xMin: -4.5, xMax: 4.5, yMin: -2, yMax: 18 };
+const dPAD = 40;
+
+function dW2S(x, y) {
+  const sx = dPAD + (x - dRange.xMin) / (dRange.xMax - dRange.xMin) * (dCanvas.width - 2*dPAD);
+  const sy = dCanvas.height - dPAD - (y - dRange.yMin) / (dRange.yMax - dRange.yMin) * (dCanvas.height - 2*dPAD);
+  return [sx, sy];
+}
+
+function renderDeriv() {
+  const x0 = parseFloat(document.getElementById('derivX').value);
+  const fx = x0 * x0;
+  const dfx = 2 * x0; // derivada de x^2
+
+  dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+
+  // Grid
+  dCtx.strokeStyle = '#1f2937';
+  dCtx.lineWidth = 1;
+  for (let x = -4; x <= 4; x++) {
+    const [sx] = dW2S(x, 0);
+    dCtx.beginPath(); dCtx.moveTo(sx, dPAD); dCtx.lineTo(sx, dCanvas.height - dPAD); dCtx.stroke();
+  }
+  for (let y = 0; y <= 16; y += 4) {
+    const [, sy] = dW2S(0, y);
+    dCtx.beginPath(); dCtx.moveTo(dPAD, sy); dCtx.lineTo(dCanvas.width - dPAD, sy); dCtx.stroke();
+  }
+
+  // Ejes
+  dCtx.strokeStyle = '#4b5563';
+  dCtx.lineWidth = 2;
+  const [, y0screen] = dW2S(0, 0);
+  const [x0screen] = dW2S(0, 0);
+  dCtx.beginPath(); dCtx.moveTo(dPAD, y0screen); dCtx.lineTo(dCanvas.width - dPAD, y0screen); dCtx.stroke();
+  dCtx.beginPath(); dCtx.moveTo(x0screen, dPAD); dCtx.lineTo(x0screen, dCanvas.height - dPAD); dCtx.stroke();
+
+  // Labels ejes
+  dCtx.fillStyle = '#6b7280';
+  dCtx.font = '11px monospace';
+  for (let x = -4; x <= 4; x++) {
+    if (x === 0) continue;
+    const [sx, sy] = dW2S(x, 0);
+    dCtx.fillText(x, sx - 4, sy + 14);
+  }
+  for (let y = 4; y <= 16; y += 4) {
+    const [sx, sy] = dW2S(0, y);
+    dCtx.fillText(y, sx - 22, sy + 4);
+  }
+
+  // Curva f(x) = x²
+  dCtx.strokeStyle = '#fbbf24';
+  dCtx.lineWidth = 2.5;
+  dCtx.beginPath();
+  let first = true;
+  for (let x = dRange.xMin; x <= dRange.xMax; x += 0.05) {
+    const y = x * x;
+    if (y > dRange.yMax) { first = true; continue; }
+    const [sx, sy] = dW2S(x, y);
+    if (first) { dCtx.moveTo(sx, sy); first = false; }
+    else dCtx.lineTo(sx, sy);
+  }
+  dCtx.stroke();
+
+  // Tangente: y = dfx * (x - x0) + fx
+  dCtx.strokeStyle = '#7dd3fc';
+  dCtx.lineWidth = 2;
+  const tangentAt = (x) => dfx * (x - x0) + fx;
+  const xA = dRange.xMin, xB = dRange.xMax;
+  const [txA, tyA] = dW2S(xA, tangentAt(xA));
+  const [txB, tyB] = dW2S(xB, tangentAt(xB));
+  dCtx.setLineDash([]);
+  dCtx.beginPath(); dCtx.moveTo(txA, tyA); dCtx.lineTo(txB, tyB); dCtx.stroke();
+
+  // Triangulito que muestra "rise over run"
+  const runX = x0 + 1;
+  const runY = fx;
+  const riseY = tangentAt(runX);
+  const [rx1, ry1] = dW2S(x0, fx);
+  const [rx2, ry2] = dW2S(runX, runY);
+  const [rx3, ry3] = dW2S(runX, riseY);
+  dCtx.setLineDash([4, 4]);
+  dCtx.strokeStyle = 'rgba(251, 191, 36, 0.7)';
+  dCtx.lineWidth = 1.5;
+  dCtx.beginPath();
+  dCtx.moveTo(rx1, ry1); dCtx.lineTo(rx2, ry2); // horizontal (run = 1)
+  dCtx.moveTo(rx2, ry2); dCtx.lineTo(rx3, ry3); // vertical (rise = dfx)
+  dCtx.stroke();
+  dCtx.setLineDash([]);
+
+  // Labels del triángulo
+  dCtx.fillStyle = '#fcd34d';
+  dCtx.font = '12px monospace';
+  dCtx.fillText('Δx = 1', (rx1 + rx2)/2 - 18, ry2 + 16);
+  dCtx.fillText('Δy = ' + dfx.toFixed(2), rx3 + 6, (ry2 + ry3)/2 + 4);
+
+  // Punto sobre la curva
+  const [px, py] = dW2S(x0, fx);
+  dCtx.fillStyle = '#fb7185';
+  dCtx.beginPath(); dCtx.arc(px, py, 7, 0, Math.PI * 2); dCtx.fill();
+  dCtx.strokeStyle = '#fff';
+  dCtx.lineWidth = 2;
+  dCtx.stroke();
+
+  // Leyenda
+  dCtx.fillStyle = '#fbbf24';
+  dCtx.font = 'bold 13px monospace';
+  dCtx.fillText('f(x) = x²', dCanvas.width - 110, 24);
+  dCtx.fillStyle = '#7dd3fc';
+  dCtx.fillText('tangente', dCanvas.width - 110, 44);
+
+  // Updates
+  document.getElementById('derivXVal').textContent = x0.toFixed(2);
+  document.getElementById('derivFx').textContent = fx.toFixed(2);
+  document.getElementById('derivDfx').textContent = dfx.toFixed(2);
+  document.getElementById('derivSlope').textContent = dfx.toFixed(2);
+}
+
+document.getElementById('derivX').addEventListener('input', renderDeriv);
+renderDeriv();
+
+// ============= Animación del auto =============
+const carEmoji = document.getElementById('carEmoji');
+const carT = document.getElementById('carT');
+const carPos = document.getElementById('carPos');
+const carVel = document.getElementById('carVel');
+const carMarks = document.getElementById('carMarks');
+let carTime = 0;
+let carPlaying = false;
+let carRAF = null;
+let carLastTs = 0;
+
+// Marcas de la ruta (posiciones 0, 1, 4, 9, 16, 25 metros sobre track de 25m)
+const carTrackMax = 25;
+[0, 1, 4, 9, 16, 25].forEach(pos => {
+  const pct = (pos / carTrackMax) * 100;
+  const mark = document.createElement('div');
+  mark.className = 'car-mark';
+  mark.style.left = pct + '%';
+  carMarks.appendChild(mark);
+  const label = document.createElement('div');
+  label.className = 'car-mark-label';
+  label.style.left = pct + '%';
+  label.textContent = pos + 'm';
+  carMarks.appendChild(label);
+});
+
+function updateCar() {
+  const pos = carTime * carTime;
+  const vel = 2 * carTime;
+  const pct = Math.min((pos / carTrackMax) * 100, 100);
+  carEmoji.style.left = pct + '%';
+  carT.textContent = carTime.toFixed(2) + ' s';
+  carPos.textContent = pos.toFixed(2) + ' m';
+  carVel.textContent = vel.toFixed(2) + ' m/s';
+}
+
+function carFrame(ts) {
+  if (!carPlaying) return;
+  if (!carLastTs) carLastTs = ts;
+  const dt = (ts - carLastTs) / 1000;
+  carLastTs = ts;
+  carTime += dt * 0.8;
+  if (carTime * carTime >= carTrackMax) {
+    carTime = Math.sqrt(carTrackMax);
+    carPlaying = false;
+    document.getElementById('carPlay').textContent = '▶ Play';
+  }
+  updateCar();
+  if (carPlaying) carRAF = requestAnimationFrame(carFrame);
+}
+
+document.getElementById('carPlay').onclick = () => {
+  const btn = document.getElementById('carPlay');
+  if (carPlaying) {
+    carPlaying = false;
+    btn.textContent = '▶ Play';
+  } else {
+    if (carTime * carTime >= carTrackMax) carTime = 0;
+    carPlaying = true;
+    carLastTs = 0;
+    btn.textContent = '⏸ Pausar';
+    carRAF = requestAnimationFrame(carFrame);
+  }
+};
+document.getElementById('carReset').onclick = () => {
+  carTime = 0;
+  carPlaying = false;
+  document.getElementById('carPlay').textContent = '▶ Play';
+  updateCar();
+};
+updateCar();
+
+// ============= Visualizador del tazón (gradiente) =============
+const gCanvas = document.getElementById('gradCanvas');
+const gCtx = gCanvas.getContext('2d');
+// Función simulada: L(m, b) = m² + b² (tazón simétrico centrado en 0,0)
+// Usamos coordenadas m ∈ [-3, 3], b ∈ [-3, 3]
+const gR = { min: -3, max: 3 };
+let gM = -1.5, gB = 1.2;
+let gDragging = false;
+let gAutoPlaying = false;
+let gAutoHandle = null;
+
+function gW2S(m, b) {
+  const sx = (m - gR.min) / (gR.max - gR.min) * gCanvas.width;
+  const sy = (1 - (b - gR.min) / (gR.max - gR.min)) * gCanvas.height;
+  return [sx, sy];
+}
+function gS2W(sx, sy) {
+  const m = gR.min + (sx / gCanvas.width) * (gR.max - gR.min);
+  const b = gR.min + (1 - sy / gCanvas.height) * (gR.max - gR.min);
+  return [m, b];
+}
+function gL(m, b) { return m*m + b*b; }
+function gGrad(m, b) { return [2*m, 2*b]; }
+
+function renderGrad() {
+  const w = gCanvas.width, h = gCanvas.height;
+  // Heatmap de fondo
+  const img = gCtx.createImageData(w, h);
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const [m, b] = gS2W(px, py);
+      const L = gL(m, b);
+      // Normalizar L en rango [0, 18] (max en esquinas = 3²+3²)
+      const t = Math.min(L / 18, 1);
+      // Azul (bajo) a rojo (alto)
+      const r = Math.floor(20 + t * 200);
+      const g = Math.floor(30 + (1-t) * 50);
+      const bC = Math.floor(80 + (1-t) * 150);
+      const idx = (py * w + px) * 4;
+      img.data[idx] = r;
+      img.data[idx+1] = g;
+      img.data[idx+2] = bC;
+      img.data[idx+3] = 255;
+    }
+  }
+  gCtx.putImageData(img, 0, 0);
+
+  // Curvas de nivel
+  gCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+  gCtx.lineWidth = 1;
+  const levels = [0.5, 1.5, 3, 5, 8, 12, 16];
+  for (const lv of levels) {
+    // Dibujar círculo de radio sqrt(lv) (porque L = m² + b² = lv)
+    const r = Math.sqrt(lv);
+    const [cx, cy] = gW2S(0, 0);
+    const [rx] = gW2S(r, 0);
+    const px = rx - cx;
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, px, 0, Math.PI * 2);
+    gCtx.stroke();
+  }
+
+  // Ejes
+  gCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+  gCtx.lineWidth = 1.5;
+  const [ax0, ay0] = gW2S(0, 0);
+  gCtx.beginPath(); gCtx.moveTo(0, ay0); gCtx.lineTo(w, ay0); gCtx.stroke();
+  gCtx.beginPath(); gCtx.moveTo(ax0, 0); gCtx.lineTo(ax0, h); gCtx.stroke();
+  gCtx.fillStyle = '#fff';
+  gCtx.font = 'bold 12px monospace';
+  gCtx.fillText('m →', w - 40, ay0 - 8);
+  gCtx.fillText('↑ b', ax0 + 8, 20);
+
+  // Flechas del gradiente
+  const [gm, gb] = gGrad(gM, gB);
+  const mag = Math.sqrt(gm*gm + gb*gb);
+  const [px, py] = gW2S(gM, gB);
+
+  // Escala para que las flechas se vean bien
+  const arrowScale = 40;
+  const gxEnd = gM + gm * 0.15;
+  const gyEnd = gB + gb * 0.15;
+  const [aex, aey] = gW2S(gxEnd, gyEnd);
+  // Flecha del gradiente (cuesta arriba, roja)
+  drawArrow(gCtx, px, py, aex, aey, '#fb7185', 3);
+
+  // Flecha de descent (azul punteada, contraria)
+  const dxEnd = gM - gm * 0.15;
+  const dyEnd = gB - gb * 0.15;
+  const [dex, dey] = gW2S(dxEnd, dyEnd);
+  gCtx.setLineDash([6, 4]);
+  drawArrow(gCtx, px, py, dex, dey, '#7dd3fc', 2.5);
+  gCtx.setLineDash([]);
+
+  // Punto actual
+  gCtx.fillStyle = '#fff';
+  gCtx.beginPath(); gCtx.arc(px, py, 8, 0, Math.PI * 2); gCtx.fill();
+  gCtx.strokeStyle = '#000';
+  gCtx.lineWidth = 2;
+  gCtx.stroke();
+
+  // Etiquetas
+  gCtx.fillStyle = '#fda4af';
+  gCtx.font = 'bold 12px monospace';
+  gCtx.fillText('∇L (sube)', aex + 6, aey);
+  gCtx.fillStyle = '#7dd3fc';
+  gCtx.fillText('-∇L (baja)', dex + 6, dey);
+
+  // Mínimo
+  const [minx, miny] = gW2S(0, 0);
+  gCtx.fillStyle = '#22c55e';
+  gCtx.beginPath(); gCtx.arc(minx, miny, 5, 0, Math.PI * 2); gCtx.fill();
+  gCtx.fillStyle = '#86efac';
+  gCtx.fillText('mínimo', minx + 8, miny + 4);
+
+  // Update stats
+  document.getElementById('gradM').textContent = gM.toFixed(2);
+  document.getElementById('gradB').textContent = gB.toFixed(2);
+  document.getElementById('gradL').textContent = gL(gM, gB).toFixed(2);
+  document.getElementById('gradMag').textContent = mag.toFixed(2);
+  document.getElementById('gradDm').textContent = gm.toFixed(2);
+  document.getElementById('gradDb').textContent = gb.toFixed(2);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  const ang = Math.atan2(y2 - y1, x2 - x1);
+  const hs = 10;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - hs * Math.cos(ang - Math.PI/6), y2 - hs * Math.sin(ang - Math.PI/6));
+  ctx.lineTo(x2 - hs * Math.cos(ang + Math.PI/6), y2 - hs * Math.sin(ang + Math.PI/6));
+  ctx.closePath();
+  ctx.fill();
+}
+
+gCanvas.addEventListener('mousedown', (e) => {
+  const rect = gCanvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (gCanvas.width / rect.width);
+  const sy = (e.clientY - rect.top) * (gCanvas.height / rect.height);
+  const [px, py] = gW2S(gM, gB);
+  if (Math.hypot(sx - px, sy - py) < 20) gDragging = true;
+  else {
+    [gM, gB] = gS2W(sx, sy);
+    renderGrad();
+  }
+});
+gCanvas.addEventListener('mousemove', (e) => {
+  if (!gDragging) return;
+  const rect = gCanvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (gCanvas.width / rect.width);
+  const sy = (e.clientY - rect.top) * (gCanvas.height / rect.height);
+  [gM, gB] = gS2W(sx, sy);
+  gM = Math.max(gR.min, Math.min(gR.max, gM));
+  gB = Math.max(gR.min, Math.min(gR.max, gB));
+  renderGrad();
+});
+window.addEventListener('mouseup', () => gDragging = false);
+
+document.getElementById('gradStep').onclick = () => {
+  const [gm, gb] = gGrad(gM, gB);
+  const lr = 0.1;
+  gM -= lr * gm;
+  gB -= lr * gb;
+  renderGrad();
+};
+document.getElementById('gradAuto').onclick = () => {
+  const btn = document.getElementById('gradAuto');
+  if (gAutoPlaying) {
+    clearInterval(gAutoHandle);
+    gAutoPlaying = false;
+    btn.textContent = 'Auto ▶';
+  } else {
+    gAutoPlaying = true;
+    btn.textContent = 'Pausar ⏸';
+    gAutoHandle = setInterval(() => {
+      const [gm, gb] = gGrad(gM, gB);
+      gM -= 0.08 * gm;
+      gB -= 0.08 * gb;
+      renderGrad();
+      if (Math.sqrt(gm*gm + gb*gb) < 0.01) {
+        clearInterval(gAutoHandle);
+        gAutoPlaying = false;
+        btn.textContent = 'Auto ▶';
+      }
+    }, 80);
+  }
+};
+document.getElementById('gradReset').onclick = () => {
+  gM = -1.5; gB = 1.2;
+  renderGrad();
+};
+renderGrad();
+</script>
+</body>
+</html>
